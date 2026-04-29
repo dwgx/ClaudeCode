@@ -1,4 +1,4 @@
-# ClaudeCode
+# JeeBacode
 
 > 个人定制版终端编码 agent CLI。基于 [opencode](https://github.com/anomalyco/opencode) 二次开发，融合 [claude-code-router](https://github.com/musistudio/claude-code-router) 的多 Provider 路由、[Citadel](https://github.com/SethGammon/Citadel) 的 `/do` 编排、以及精选自 [SuperClaude](https://github.com/SuperClaude-Org/SuperClaude_Framework) / [claude-skills](https://github.com/alirezarezvani/claude-skills) 等社区资源的命令、skill 与 sub-agent。
 >
