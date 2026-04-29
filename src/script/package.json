@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/package",
+  "name": "@dwgx/claudecode-script",
+  "license": "MIT",
+  "dependencies": {
+    "semver": "^7.6.3"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/semver": "^7.5.8"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "version": "0.0.1",
+  "repository": {
+    "url": "https://github.com/dwgx/ClaudeCode.git",
+    "type": "git"
+  },
+  "homepage": "https://github.com/dwgx/ClaudeCode",
+  "bugs": {
+    "url": "https://github.com/dwgx/ClaudeCode/issues"
+  },
+  "author": "dwgx <dwgx1337@outlook.com>"
+}
