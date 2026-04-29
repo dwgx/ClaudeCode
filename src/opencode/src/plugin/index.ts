@@ -53,12 +53,13 @@ export interface Interface {
 
 export class Service extends Context.Service<Service, Interface>()("@claudecode/Plugin") {}
 
-// Built-in plugins that are directly imported (not installed from npm)
+// upstream auth plugins are typed against the older @opencode-ai/plugin Plugin shape;
+// structurally compatible at runtime, so cast at the boundary.
 const INTERNAL_PLUGINS: PluginInstance[] = [
   CodexAuthPlugin,
   CopilotAuthPlugin,
-  GitlabAuthPlugin,
-  PoeAuthPlugin,
+  GitlabAuthPlugin as unknown as PluginInstance,
+  PoeAuthPlugin as unknown as PluginInstance,
   CloudflareWorkersAuthPlugin,
   CloudflareAIGatewayAuthPlugin,
 ]

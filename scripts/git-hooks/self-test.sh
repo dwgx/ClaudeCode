@@ -13,6 +13,10 @@ set -uo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT"
 
+# 收尾必须把 index 还原到 HEAD，否则 self-test 后任何 git status / commit
+# 都会把所有文件当作 staged-for-deletion（read-tree --empty 把 index 清空了）
+trap 'git read-tree HEAD 2>/dev/null || true' EXIT
+
 PASS=0
 FAIL=0
 
