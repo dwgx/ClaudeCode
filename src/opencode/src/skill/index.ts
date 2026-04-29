@@ -1,6 +1,7 @@
+import fs from "fs"
 import os from "os"
 import path from "path"
-import { pathToFileURL } from "url"
+import { fileURLToPath, pathToFileURL } from "url"
 import z from "zod"
 import { Effect, Layer, Context, Schema } from "effect"
 import { zod } from "@/util/effect-zod"
@@ -24,6 +25,30 @@ const EXTERNAL_DIRS = [".claude", ".agents"]
 const EXTERNAL_SKILL_PATTERN = "skills/**/SKILL.md"
 const CLAUDECODE_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
 const SKILL_PATTERN = "**/SKILL.md"
+const BUILTIN_PLUGIN_PATTERN = "*/skills/**/SKILL.md"
+
+// 仓库自带的 plugins-builtin/ 在 dev 时位于 repo root；从本模块向上搜索即可
+// 找到。打成二进制后我们会把它放在已知的 share 路径，可加 fallback。
+const BUILTIN_PLUGINS_ROOT: string | undefined = (() => {
+  let dir: string
+  try {
+    dir = path.dirname(fileURLToPath(import.meta.url))
+  } catch {
+    return undefined
+  }
+  for (let i = 0; i < 12; i++) {
+    const candidate = path.join(dir, "plugins-builtin")
+    try {
+      if (fs.statSync(candidate).isDirectory()) return candidate
+    } catch {
+      // ignore
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) return undefined
+    dir = parent
+  }
+  return undefined
+})()
 
 export const Info = Schema.Struct({
   name: Schema.String,
@@ -171,6 +196,10 @@ const discoverSkills = Effect.fnUntraced(function* (
   const configDirs = yield* config.directories()
   for (const dir of configDirs) {
     yield* scan(state, dir, CLAUDECODE_SKILL_PATTERN)
+  }
+
+  if (BUILTIN_PLUGINS_ROOT && (yield* fsys.isDir(BUILTIN_PLUGINS_ROOT))) {
+    yield* scan(state, BUILTIN_PLUGINS_ROOT, BUILTIN_PLUGIN_PATTERN, { scope: "builtin" })
   }
 
   const cfg = yield* config.get()
