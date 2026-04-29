@@ -33,6 +33,8 @@ import { DialogModel } from "@tui/component/dialog-model"
 import { useConnected } from "@tui/component/use-connected"
 import { DialogMcp } from "@tui/component/dialog-mcp"
 import { DialogMcpAdd } from "@tui/component/dialog-mcp-add"
+import { DialogPermissions } from "@tui/component/dialog-permissions"
+import { DialogLogout } from "@tui/component/dialog-logout"
 import { DialogStatus } from "@tui/component/dialog-status"
 import { DialogThemeList } from "@tui/component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
@@ -578,6 +580,18 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
     },
     {
+      title: "Edit permissions",
+      value: "permissions.list",
+      category: "Agent",
+      slash: {
+        name: "permissions",
+        aliases: ["perms"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogPermissions />)
+      },
+    },
+    {
       title: "Agent cycle",
       value: "agent.cycle",
       keybind: "agent_cycle",
@@ -625,11 +639,23 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       suggested: !connected(),
       slash: {
         name: "connect",
+        aliases: ["login"],
       },
       onSelect: () => {
         dialog.replace(() => <DialogProviderList />)
       },
       category: "Provider",
+    },
+    {
+      title: "Sign out provider",
+      value: "provider.logout",
+      category: "Account",
+      slash: {
+        name: "logout",
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogLogout />)
+      },
     },
     ...(sync.data.console_state.switchableOrgCount > 1
       ? [
