@@ -17,7 +17,8 @@ function run(target) {
   process.exit(code)
 }
 
-const envPath = process.env.OPENCODE_BIN_PATH
+// dual-read until v1.0 per ADR-0012; CLAUDECODE_BIN_PATH wins on conflict
+const envPath = process.env.CLAUDECODE_BIN_PATH || process.env.OPENCODE_BIN_PATH
 if (envPath) {
   run(envPath)
 }

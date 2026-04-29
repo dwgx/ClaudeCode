@@ -18,7 +18,9 @@ export class FetchClient implements ProviderClient {
       scenario: decision.scenario,
     }
 
-    const outbound = await applyTransformerChain(req, decision.transformerChain, "transformRequestIn", ctx)
+    let outbound = await applyTransformerChain(req, decision.transformerChain, "transformRequestIn", ctx)
+    outbound = await applyTransformerChain(outbound, decision.transformerChain, "transformRequestOut", ctx)
+
     const endpoint = resolveEndpoint(outbound, decision, ctx)
     const headers = {
       "content-type": "application/json",
@@ -38,8 +40,11 @@ export class FetchClient implements ProviderClient {
       throw new Error(`provider request failed: ${response.status} ${response.statusText}${body ? ` ${body}` : ""}`)
     }
 
-    const raw = (await response.json()) as RouterResponse
-    return applyTransformerChain(raw, [...decision.transformerChain].reverse(), "transformResponseIn", ctx)
+    const reverseChain = [...decision.transformerChain].reverse()
+    let inbound = (await response.json()) as RouterResponse
+    inbound = await applyTransformerChain(inbound, reverseChain, "transformResponseIn", ctx)
+    inbound = await applyTransformerChain(inbound, reverseChain, "transformResponseOut", ctx)
+    return inbound
   }
 
   abort(): void {

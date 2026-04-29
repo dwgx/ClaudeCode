@@ -5,12 +5,8 @@ export class DoHandler {
 
   async handle(input: string, ctx: DoContext): Promise<DoIntent | null> {
     for (const matcher of this.matchers) {
-      try {
-        const intent = await matcher.match(input, ctx)
-        if (intent) return intent
-      } catch (_error) {
-        continue
-      }
+      const intent = await matcher.match(input, ctx)
+      if (intent) return intent
     }
     return null
   }

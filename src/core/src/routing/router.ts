@@ -33,6 +33,8 @@ export class Router {
   }
 
   private async classifyScenario(req: RouterRequest): Promise<Scenario> {
+    // v0.1: only default + longContext. background/think/webSearch/image and
+    // <CCR-SUBAGENT-MODEL> tag override are deferred to v0.2 — see ADR-0004.
     if (this.config.Router.longContext && this.estimateTokenCount(req) > this.longContextThreshold()) {
       return "longContext"
     }

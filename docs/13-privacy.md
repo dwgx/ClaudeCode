@@ -2,6 +2,17 @@
 
 > 这是整个项目最重要的一条规则：**没有任何私人内容应该出现在公开仓库里。**
 
+## 边界定义（重要）
+
+"私人内容"指**实际的私人数据**：你的 CLAUDE.md 文件实体内容、`private/` 目录下文件实体、API key 字串、私人邮箱、机器路径等。
+
+**不**指对这些路径名的概念性引用。本文档、`docs/14-subagent-dispatch.md`、ADR-0003 等都会**字面**提到 `CLAUDE.md` / `AGENTS.md` / `private/` / `memory/` ——这是公开协议的一部分，告诉读者哪些路径会被防御层拦截。
+
+因此，审计 grep 命中"路径名字符串"≠ 隐私泄漏。真正的 ship gate 是：
+1. `.gitignore` 实际拦截了路径模式（layer 1）
+2. `pre-commit` hook 实际拦截了路径模式 + 内容指纹 + 提交人身份（layer 2）
+3. `scripts/git-hooks/self-test.sh` 39/39 PASS
+
 ## 三层防御
 
 ### 层 1：`.gitignore`
