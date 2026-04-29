@@ -13,9 +13,20 @@ set -uo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT"
 
-# 收尾必须把 index 还原到 HEAD，否则 self-test 后任何 git status / commit
-# 都会把所有文件当作 staged-for-deletion（read-tree --empty 把 index 清空了）
-trap 'git read-tree HEAD 2>/dev/null || true' EXIT
+# 收尾必须把 index 还原到 self-test 跑之前的状态——简单 read-tree HEAD
+# 会把调用者已经 staged 的改动也清掉。所以先备份 .git/index，trap 时还原。
+__SELFTEST_INDEX_BACKUP="$(mktemp 2>/dev/null || echo "$REPO_ROOT/.git/.selftest-index.bak")"
+if [[ -f "$REPO_ROOT/.git/index" ]]; then
+  cp -f -- "$REPO_ROOT/.git/index" "$__SELFTEST_INDEX_BACKUP" 2>/dev/null || true
+fi
+trap '
+  if [[ -f "$__SELFTEST_INDEX_BACKUP" ]]; then
+    cp -f -- "$__SELFTEST_INDEX_BACKUP" "$REPO_ROOT/.git/index" 2>/dev/null || true
+    rm -f -- "$__SELFTEST_INDEX_BACKUP" 2>/dev/null || true
+  else
+    git read-tree HEAD 2>/dev/null || true
+  fi
+' EXIT
 
 PASS=0
 FAIL=0
