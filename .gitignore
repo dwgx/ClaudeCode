@@ -1,0 +1,92 @@
+# =====================================================================
+# ClaudeCode — 私有/敏感路径绝对禁止入仓
+# 规则形态：先全锁，再 allowlist 个别公开占位
+# =====================================================================
+
+# --- 个人/隐私层（最高优先级）-----------------------------------------
+# private/ 内默认全部 ignore，再 allowlist 极少数公开占位
+# gitignore 深层 allowlist 必须先 un-ignore 父目录，再控制其内部
+private/*
+!private/README.md
+!private/CLAUDE.example.md
+!private/AGENTS.example.md
+!private/.env.example
+!private/notes/
+!private/secrets/
+# notes/ 与 secrets/ 内部默认 ignore，仅放行 .gitkeep
+private/notes/*
+private/secrets/*
+!private/notes/.gitkeep
+!private/secrets/.gitkeep
+
+_private/
+.private/
+**/private.local.*
+**/secrets.local.*
+
+# --- AI 助手私人指令文件（任何位置，根级或子目录）---------------------
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+AGENT.md
+GEMINI.md
+.claude/
+.codex/
+.gemini/
+
+# --- 长期记忆 / 笔记 --------------------------------------------------
+# 这里的 notes / journal 锚到根，避免与 private/notes/ 的 allowlist 冲突
+memory/
+/notes/
+todo.local.md
+/journal/
+
+# --- 调研产物 / 子代理输出（非源代码）---------------------------------
+_codex-out/
+_gemini-out/
+_research/
+_scratch/
+
+# --- 第三方参考源（许可证混杂，仅本地使用）---------------------------
+ReferenceSource/
+
+# --- 凭据 / 环境 ------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.secret
+*.secret.*
+*.key
+*.pem
+*.pfx
+credentials.json
+service-account*.json
+
+# --- 构建产物 / 依赖 --------------------------------------------------
+node_modules/
+dist/
+build/
+out/
+.bun/
+.cache/
+.turbo/
+.next/
+.parcel-cache/
+*.tsbuildinfo
+
+# --- IDE / OS ---------------------------------------------------------
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- 日志 / 临时 ------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp

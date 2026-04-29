@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# ClaudeCode pre-commit hook
+# 1) 阻止任何私有/敏感路径被 staged
+# 2) 强制提交人身份 = dwgx <dwgx1337@outlook.com>
+# 3) 扫描 staged 文件内容做最小密钥指纹
+#
+# 此 hook 一旦触发拒绝就 exit 1，不要 --no-verify 绕过。
+# 想绕过 = 私有文件泄露的最高风险。
+
+set -euo pipefail
+
+RED=$'\033[0;31m'
+YELLOW=$'\033[0;33m'
+GREEN=$'\033[0;32m'
+RESET=$'\033[0m'
+
+fail() {
+  printf '%s[pre-commit BLOCKED]%s %s\n' "$RED" "$RESET" "$1" >&2
+  exit 1
+}
+
+note() {
+  printf '%s[pre-commit]%s %s\n' "$YELLOW" "$RESET" "$1" >&2
+}
+
+ok() {
+  printf '%s[pre-commit OK]%s %s\n' "$GREEN" "$RESET" "$1" >&2
+}
+
+# ---------- 1. 路径黑名单 ----------
+# 任何 staged 路径匹配以下正则一律拒
+PATH_BLACKLIST=(
+  '^private/'
+  '^_private/'
+  '^\.private/'
+  '^memory/'
+  '^_codex-out/'
+  '^_gemini-out/'
+  '^_research/'
+  '^_scratch/'
+  '^ReferenceSource/'
+  '^\.claude/'
+  '^\.codex/'
+  '^\.gemini/'
+  '(^|/)CLAUDE\.md$'
+  '(^|/)CLAUDE\.local\.md$'
+  '(^|/)AGENTS?\.md$'
+  '(^|/)GEMINI\.md$'
+  '(^|/)\.env(\..*)?$'
+  '\.secret(\..*)?$'
+  '\.key$'
+  '\.pem$'
+  '\.pfx$'
+  '(^|/)credentials\.json$'
+  '(^|/)service-account.*\.json$'
+)
+
+# 例外白名单：example/template 文件可以入仓
+PATH_EXCEPT=(
+  '\.example\.'
+  '\.template\.'
+  '(^|/)private/README\.md$'
+  '\.gitkeep$'
+)
+
+is_excepted() {
+  local path="$1"
+  for pat in "${PATH_EXCEPT[@]}"; do
+    if [[ "$path" =~ $pat ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+STAGED="$(git diff --cached --name-only --diff-filter=ACMR)"
+if [[ -z "$STAGED" ]]; then
+  note "无 staged 文件，跳过"
+  exit 0
+fi
+
+VIOLATIONS=()
+while IFS= read -r path; do
+  [[ -z "$path" ]] && continue
+  if is_excepted "$path"; then
+    continue
+  fi
+  for pat in "${PATH_BLACKLIST[@]}"; do
+    if [[ "$path" =~ $pat ]]; then
+      VIOLATIONS+=("$path  ← 命中 $pat")
+      break
+    fi
+  done
+done <<< "$STAGED"
+
+if [[ ${#VIOLATIONS[@]} -gt 0 ]]; then
+  printf '%s' "$RED" >&2
+  echo "================================================================" >&2
+  echo "  以下 staged 文件命中私有路径黑名单，提交已拒绝：" >&2
+  echo "================================================================" >&2
+  printf '%s' "$RESET" >&2
+  for v in "${VIOLATIONS[@]}"; do
+    echo "  - $v" >&2
+  done
+  echo "" >&2
+  echo "  解决方法： git restore --staged <file> 或把内容移到 private/" >&2
+  echo "  绝不要用 --no-verify 绕过。" >&2
+  exit 1
+fi
+ok "路径黑名单：通过 ($(echo "$STAGED" | wc -l | tr -d ' ') 个 staged 文件)"
+
+# ---------- 2. 提交人身份 ----------
+# 必须 user.name=dwgx, user.email=dwgx1337@outlook.com
+EXPECTED_NAME="dwgx"
+EXPECTED_EMAIL="dwgx1337@outlook.com"
+
+ACTUAL_NAME="$(git config user.name 2>/dev/null || true)"
+ACTUAL_EMAIL="$(git config user.email 2>/dev/null || true)"
+
+if [[ "$ACTUAL_NAME" != "$EXPECTED_NAME" ]]; then
+  fail "user.name='$ACTUAL_NAME' ≠ '$EXPECTED_NAME'  →  git config user.name '$EXPECTED_NAME'"
+fi
+if [[ "$ACTUAL_EMAIL" != "$EXPECTED_EMAIL" ]]; then
+  fail "user.email='$ACTUAL_EMAIL' ≠ '$EXPECTED_EMAIL'  →  git config user.email '$EXPECTED_EMAIL'"
+fi
+ok "提交人身份：$ACTUAL_NAME <$ACTUAL_EMAIL>"
+
+# ---------- 3. 内容指纹（最小密钥扫描）----------
+# 只扫极高确定度的 pattern，避免误杀
+declare -A FINGERPRINTS=(
+  [aws_access_key]='AKIA[0-9A-Z]{16}'
+  [openai_key]='sk-[A-Za-z0-9]{32,}'
+  [anthropic_key]='sk-ant-[A-Za-z0-9_-]{20,}'
+  [gh_pat]='gh[ps]_[A-Za-z0-9]{30,}'
+  [google_api_key]='AIza[0-9A-Za-z_-]{35}'
+  [private_pem]='-----BEGIN [A-Z ]*PRIVATE KEY-----'
+)
+
+# 这些文件天然包含"假 key 样本"用于自测，跳过指纹扫描
+FINGERPRINT_EXEMPT=(
+  '^scripts/git-hooks/self-test\.sh$'
+)
+
+is_fp_exempt() {
+  local path="$1"
+  for pat in "${FINGERPRINT_EXEMPT[@]}"; do
+    if [[ "$path" =~ $pat ]]; then return 0; fi
+  done
+  return 1
+}
+
+CONTENT_HITS=()
+while IFS= read -r path; do
+  [[ -z "$path" ]] && continue
+  # 二进制跳过
+  if ! git diff --cached --numstat -- "$path" 2>/dev/null | grep -qE '^[0-9]'; then
+    continue
+  fi
+  # 自测脚本豁免
+  if is_fp_exempt "$path"; then
+    continue
+  fi
+  # 取 staged 内容
+  staged_content="$(git show ":$path" 2>/dev/null || true)"
+  [[ -z "$staged_content" ]] && continue
+  for name in "${!FINGERPRINTS[@]}"; do
+    pat="${FINGERPRINTS[$name]}"
+    # `--` 终止 grep flag 解析，避免 PEM 头里的 ----- 被当作 flag
+    if echo "$staged_content" | grep -qE -- "$pat"; then
+      CONTENT_HITS+=("$path  ← 疑似 $name")
+    fi
+  done
+done <<< "$STAGED"
+
+if [[ ${#CONTENT_HITS[@]} -gt 0 ]]; then
+  printf '%s' "$RED" >&2
+  echo "================================================================" >&2
+  echo "  staged 内容命中密钥指纹，提交已拒绝：" >&2
+  echo "================================================================" >&2
+  printf '%s' "$RESET" >&2
+  for v in "${CONTENT_HITS[@]}"; do
+    echo "  - $v" >&2
+  done
+  exit 1
+fi
+ok "密钥指纹：通过"
+
+ok "全部检查通过，可以 commit。"
+exit 0
