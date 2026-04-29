@@ -1,26 +1,32 @@
 import path from "path"
 import fs from "fs/promises"
-import { xdgData, xdgCache, xdgConfig, xdgState } from "xdg-basedir"
 import os from "os"
 import { Context, Effect, Layer } from "effect"
 import { Flock } from "./util/flock"
 
 const app = "claudecode"
-const data = path.join(xdgData!, app)
-const cache = path.join(xdgCache!, app)
-const config = path.join(xdgConfig!, app)
-const state = path.join(xdgState!, app)
+
+// 扁平布局：单根 ~/.claudecode/{config,data,cache,state,log,bin}。跨平台一致，
+// 用户期望一个可见的总目录，而不是 xdg 风格的四散路径。
+// 高级用户可用 CLAUDECODE_HOME 覆盖根目录。
+const root = process.env.CLAUDECODE_HOME ?? path.join(os.homedir(), `.${app}`)
+
+const data = path.join(root, "data")
+const cache = path.join(root, "cache")
+const config = path.join(root, "config")
+const state = path.join(root, "state")
 
 const paths = {
   get home() {
     return process.env.CLAUDECODE_TEST_HOME ?? os.homedir()
   },
   data,
-  bin: path.join(cache, "bin"),
-  log: path.join(data, "log"),
+  bin: path.join(root, "bin"),
+  log: path.join(root, "log"),
   cache,
   config,
   state,
+  root,
 }
 
 export const Path = paths
