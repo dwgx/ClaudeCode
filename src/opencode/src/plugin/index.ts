@@ -20,6 +20,7 @@ import { CloudflareAIGatewayAuthPlugin, CloudflareWorkersAuthPlugin } from "./cl
 import { AnthropicHooksPlugin } from "./anthropic-hooks"
 import { MemoryInjectorPlugin } from "./memory-injector"
 import { Anthropic1MPlugin } from "./anthropic-1m"
+import { OutputStylePlugin } from "./output-style"
 import { Effect, Layer, Context, Stream } from "effect"
 import { EffectBridge } from "@/effect/bridge"
 import { InstanceState } from "@/effect/instance-state"
@@ -68,6 +69,7 @@ const INTERNAL_PLUGINS: PluginInstance[] = [
   AnthropicHooksPlugin,
   MemoryInjectorPlugin,
   Anthropic1MPlugin,
+  OutputStylePlugin,
 ]
 
 function isServerPlugin(value: unknown): value is PluginInstance {

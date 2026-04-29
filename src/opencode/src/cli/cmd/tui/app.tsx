@@ -38,6 +38,8 @@ import { DialogHelp } from "./ui/dialog-help"
 import { CommandProvider, useCommandDialog } from "@tui/component/dialog-command"
 import { DialogAgent } from "@tui/component/dialog-agent"
 import { DialogSessionList } from "@tui/component/dialog-session-list"
+import { DialogPs } from "@tui/component/dialog-ps"
+import { DialogOutputStyle } from "@tui/component/dialog-output-style"
 import { DialogConsoleOrg } from "@tui/component/dialog-console-org"
 import { KeybindProvider, useKeybind } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
@@ -418,6 +420,30 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
       onSelect: () => {
         dialog.replace(() => <DialogSessionList />)
+      },
+    },
+    {
+      title: "Running tasks",
+      value: "session.ps",
+      category: "Session",
+      slash: {
+        name: "ps",
+        aliases: ["background", "tasks"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogPs />)
+      },
+    },
+    {
+      title: "Output style",
+      value: "output_style.list",
+      category: "Agent",
+      slash: {
+        name: "output-style",
+        aliases: ["style"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogOutputStyle />)
       },
     },
     {

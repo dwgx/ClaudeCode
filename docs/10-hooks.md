@@ -46,14 +46,15 @@ ClaudeCode 继承 opencode 的 hook 系统并加一层 Anthropic 兼容映射。
 | `UserPromptSubmit` | `chat.message` | ✅ | 用户发消息时触发；可改 parts |
 | `PreToolUse` | `tool.execute.before` | ✅ | 工具执行前，可改 args；返回 `permission.ask` 等价 |
 | `PostToolUse` | `tool.execute.after` | ✅ | 工具执行后，可改 output/title/metadata |
-| `Notification` | `event`（filter `type=notification`）| ✅ | 通用 event hook 配过滤 |
-| `Stop` | （无直接等价）| ⚠ v0.2 | 通过 `event` 事件 + state machine 判定后给 |
-| `SubagentStop` | （无直接等价）| ⚠ v0.2 | 同上 |
+| `Notification` | `permission.ask` | ✅ | 权限请求时触发（用于 desktop alert / sound）|
+| `Stop` | `session.idle` (bus, parentID 空) | ✅ | 主 session 回合结束 |
+| `SubagentStop` | `session.idle` (bus, parentID 有) | ✅ | 子 session（subagent）结束 |
 | `PreCompact` | `experimental.session.compacting` | ✅ | 可改 compaction prompt |
-| `PostCompact` | `experimental.compaction.autocontinue` | ✅ | 可决定是否自动 continue |
-| `SessionStart` | `event`（filter `type=session.start`）| ✅ | 通用 event hook 配过滤 |
-| `SessionEnd` | （无直接等价）| ⚠ v0.2 | 需补 |
-| `TaskCreated` / `TaskCompleted` | （无直接等价）| ⚠ v0.2 | task 工具触发时补 |
+| `PostCompact` | `experimental.compaction.autocontinue` | ✅ | compaction 完成后；非阻断 |
+| `SessionStart` | `session.created` (bus) | ✅ | session 创建时 |
+| `SessionEnd` | `session.deleted` (bus) | ✅ | session 销毁时 |
+| `TaskCreated` | `session.created` (bus, parentID 有) | ✅ | task 工具创建子 session |
+| `TaskCompleted` | `session.idle` (bus, parentID 有) | ✅ | task 工具子 session 进入 idle |
 | —— | `chat.params` | (opencode 独有) | 改 LLM 参数（temperature/topP/maxOutputTokens）|
 | —— | `chat.headers` | (opencode 独有) | 改 HTTP headers（注 API key、X-Beta 等）|
 | —— | `permission.ask` | (opencode 独有) | 权限决策（allow/deny/ask）|
@@ -67,7 +68,7 @@ ClaudeCode 继承 opencode 的 hook 系统并加一层 Anthropic 兼容映射。
 | —— | `provider` | (opencode 独有) | provider 注册 hook |
 | —— | `tool` | (opencode 独有) | 注册自定义 tool |
 
-合计 **8 个 Anthropic 兼容事件**（5 个直接对应 + 3 个待补）+ **11 个 opencode 独有 hook**。
+合计 **12 个 Anthropic 兼容事件全部映射** + **11 个 opencode 独有 hook**。
 
 ### 写 opencode 风格的 hook
 
@@ -129,16 +130,6 @@ Anthropic Claude Code 的 hook 配置是这样：
 每个 `command` 在事件触发时被 spawn，事件 payload 通过 **stdin (JSON)** 传入；命令的 **exit code** 决定 allow/deny；**stdout** 若是 JSON 可以改 output。
 
 ClaudeCode v0.2 会做一个 adapter：读上面的配置，注册成等价的 opencode hook 函数，从而让上游的 Anthropic hook 配置直接能用。当前 v0.1 暂未实现，请用 opencode 原生风格。
-
-### 缺 4 个事件（v0.2 待补）
-
-| Event | 实现思路 |
-|---|---|
-| `Stop` | session loop 退出时（用户 interrupt 或 LLM 自主 stop）从 session 状态机给出 |
-| `SessionEnd` | session 销毁前 fire（覆盖 Ctrl-C / `/exit` / process exit）|
-| `TaskCreated` | `task` 工具调用进入时给 |
-| `TaskCompleted` | `task` 工具完成（成功/失败/中断）时给 |
-| `SubagentStop` | task 内部 subagent 退出时给（覆盖嵌套）|
 
 ### Hook envelope 标准（v0.2 之后由 adapter 保证）
 

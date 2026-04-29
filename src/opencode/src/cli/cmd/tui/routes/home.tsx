@@ -83,6 +83,7 @@ export function Home() {
         <Toast />
       </box>
       <box width="100%" flexShrink={0}>
+        <TuiPluginRuntime.Slot name="home_status_line" />
         <TuiPluginRuntime.Slot name="home_footer" mode="single_winner" />
       </box>
     </>

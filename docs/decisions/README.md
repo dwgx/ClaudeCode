@@ -19,12 +19,11 @@
 | [0011](0011-preset-system.md) | preset 系统设计 | 🟡 草案 |
 | [0012](0012-env-prefix-migration.md) | env 前缀迁移（OPENCODE_* → CLAUDECODE_*） | 🟡 草案 |
 | [0013](0013-embedded-web-ui.md) | 内嵌 Web UI lazy-load 决策 | 🟡 草案 |
+| [0014](0014-plugin-install-security.md) | 外部 plugin 自动安装的安全模型 | 📝 设计中 |
 
 ## 计划中（按进度落实）
 
-| # | 标题 | 触发 |
-|---|---|---|
-| 0014 | plugin 自动 install 安全策略 | v0.1 plugin loader |
+_（无）_
 
 ## 模板
 

@@ -147,6 +147,46 @@ export const AnthropicHooksPlugin: Plugin = async (input: PluginInput) => {
     }
   }
 
+  // PostCompact maps to experimental.compaction.autocontinue, which fires
+  // after compaction succeeds and before the synthetic auto-continue user
+  // message. Non-blockable: PostCompact is informational.
+  if (has("PostCompact")) {
+    hooks["experimental.compaction.autocontinue"] = async (i, _o) => {
+      const envelope: HookEnvelope = {
+        event_id: ulidish(),
+        runtime: "claudecode",
+        native_event_name: "experimental.compaction.autocontinue",
+        anthropic_event_name: "PostCompact",
+        timestamp: new Date().toISOString(),
+        session_id: i.sessionID,
+        cwd: repoRoot,
+        model: { providerID: i.model.providerID, modelID: i.model.id },
+        raw: i,
+      }
+      await dispatch(all.PostCompact, undefined, envelope, false)
+    }
+  }
+
+  // Notification maps to permission.ask. The user may want to be alerted
+  // (desktop notification, sound, etc) whenever the runtime asks for
+  // permission. Non-blockable: this is observation only.
+  if (has("Notification")) {
+    hooks["permission.ask"] = async (i, _o) => {
+      const envelope: HookEnvelope = {
+        event_id: ulidish(),
+        runtime: "claudecode",
+        native_event_name: "permission.ask",
+        anthropic_event_name: "Notification",
+        timestamp: new Date().toISOString(),
+        session_id: (i as { sessionID?: string }).sessionID ?? "",
+        cwd: repoRoot,
+        tool_name: (i as { permission?: string }).permission,
+        raw: i,
+      }
+      await dispatch(all.Notification, undefined, envelope, false)
+    }
+  }
+
   // Bus event subscription handles SessionStart / SessionEnd / Stop /
   // SubagentStop / TaskCreated / TaskCompleted. The plugin loader subscribes
   // bus.subscribeAll() and fans out via the `event` hook.

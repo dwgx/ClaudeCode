@@ -1171,6 +1171,7 @@ export function Session() {
               </For>
             </scrollbox>
             <box flexShrink={0}>
+              <TuiPluginRuntime.Slot name="session_status_line" session_id={route.sessionID} />
               <Show when={permissions().length > 0}>
                 <PermissionPrompt request={permissions()[0]} />
               </Show>

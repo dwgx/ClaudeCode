@@ -27,25 +27,50 @@ const CLAUDECODE_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
 const SKILL_PATTERN = "**/SKILL.md"
 const BUILTIN_PLUGIN_PATTERN = "*/skills/**/SKILL.md"
 
-// 仓库自带的 plugins-builtin/ 在 dev 时位于 repo root；从本模块向上搜索即可
-// 找到。打成二进制后我们会把它放在已知的 share 路径，可加 fallback。
+// 仓库自带的 plugins-builtin/ 三种定位顺序：
+//   1) dev：从本模块 url 向上找 repo root（src 源码运行）
+//   2) compiled binary：与可执行文件同目录（build.ts 复制了过来）
+//   3) 兜底环境变量 CLAUDECODE_PLUGINS_BUILTIN
 const BUILTIN_PLUGINS_ROOT: string | undefined = (() => {
-  let dir: string
-  try {
-    dir = path.dirname(fileURLToPath(import.meta.url))
-  } catch {
-    return undefined
-  }
-  for (let i = 0; i < 12; i++) {
-    const candidate = path.join(dir, "plugins-builtin")
+  function dirHas(dir: string): boolean {
     try {
-      if (fs.statSync(candidate).isDirectory()) return candidate
+      return fs.statSync(path.join(dir, "plugins-builtin")).isDirectory()
+    } catch {
+      return false
+    }
+  }
+  // env override first
+  if (process.env.CLAUDECODE_PLUGINS_BUILTIN) {
+    try {
+      if (fs.statSync(process.env.CLAUDECODE_PLUGINS_BUILTIN).isDirectory()) {
+        return process.env.CLAUDECODE_PLUGINS_BUILTIN
+      }
     } catch {
       // ignore
     }
-    const parent = path.dirname(dir)
-    if (parent === dir) return undefined
-    dir = parent
+  }
+  // walk up from this module (dev)
+  let dir: string | undefined
+  try {
+    dir = path.dirname(fileURLToPath(import.meta.url))
+  } catch {
+    dir = undefined
+  }
+  if (dir) {
+    let cursor = dir
+    for (let i = 0; i < 12; i++) {
+      if (dirHas(cursor)) return path.join(cursor, "plugins-builtin")
+      const parent = path.dirname(cursor)
+      if (parent === cursor) break
+      cursor = parent
+    }
+  }
+  // compiled binary: process.execPath sibling
+  try {
+    const exeDir = path.dirname(process.execPath)
+    if (dirHas(exeDir)) return path.join(exeDir, "plugins-builtin")
+  } catch {
+    // ignore
   }
   return undefined
 })()

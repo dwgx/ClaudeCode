@@ -236,6 +236,14 @@ for (const item of targets) {
   }
 
   await $`rm -rf ./dist/${name}/bin/tui`
+
+  // Ship plugins-builtin/ alongside the binary so the skill loader can
+  // discover it from process.execPath at runtime.
+  const pluginsBuiltinSrc = path.resolve(dir, "../../plugins-builtin")
+  if (fs.existsSync(pluginsBuiltinSrc)) {
+    await $`cp -r ${pluginsBuiltinSrc} dist/${name}/bin/plugins-builtin`
+  }
+
   await Bun.file(`dist/${name}/package.json`).write(
     JSON.stringify(
       {
