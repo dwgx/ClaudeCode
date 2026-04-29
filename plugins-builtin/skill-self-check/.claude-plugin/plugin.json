@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/anthropic-claude-plugin.json",
+  "name": "skill-self-check",
+  "version": "0.0.1",
+  "description": "多步任务结束后逐项回看成功标准、diff 和验证证据。",
+  "author": {
+    "name": "dwgx",
+    "email": "dwgx1337@outlook.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/dwgx/ClaudeCode/tree/main/plugins-builtin/skill-self-check",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dwgx/ClaudeCode.git",
+    "directory": "plugins-builtin/skill-self-check"
+  },
+  "components": {
+    "skills": [
+      "./skills/self-check/SKILL.md"
+    ]
+  }
+}

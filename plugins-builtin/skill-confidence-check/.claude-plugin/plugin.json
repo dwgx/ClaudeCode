@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/anthropic-claude-plugin.json",
+  "name": "skill-confidence-check",
+  "version": "0.0.1",
+  "description": "在 \"我搞定了\" 之前，逐项打 confidence 分，强制 self-rate。",
+  "author": {
+    "name": "dwgx",
+    "email": "dwgx1337@outlook.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/dwgx/ClaudeCode/tree/main/plugins-builtin/skill-confidence-check",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dwgx/ClaudeCode.git",
+    "directory": "plugins-builtin/skill-confidence-check"
+  },
+  "components": {
+    "skills": [
+      "./skills/confidence-check/SKILL.md"
+    ]
+  }
+}

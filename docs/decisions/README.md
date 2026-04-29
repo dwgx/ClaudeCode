@@ -14,16 +14,16 @@
 | [0006](0006-builtin-skills.md) | 内置 skill / agent / mode 精选清单（v0.1） | ✅ |
 | [0007](0007-tui-opentui-solid.md) | TUI = `@opentui/solid` | ✅ |
 | [0008](0008-plugin-protocol-compat.md) | 插件协议双向兼容 | ✅ |
+| [0009](0009-builtin-subagents-shortlist.md) | 从 awesome-claude-code-subagents 精选 sub-agent | 🟡 草案 |
+| [0010](0010-skills-shortlist-expansion.md) | 从 claude-skills / agents 精选 skill 扩充 | 🟡 草案 |
+| [0011](0011-preset-system.md) | preset 系统设计 | 🟡 草案 |
+| [0012](0012-env-prefix-migration.md) | env 前缀迁移（OPENCODE_* → CLAUDECODE_*） | 🟡 草案 |
+| [0013](0013-embedded-web-ui.md) | 内嵌 Web UI lazy-load 决策 | 🟡 草案 |
 
 ## 计划中（按进度落实）
 
 | # | 标题 | 触发 |
 |---|---|---|
-| 0009 | 从 awesome-claude-code-subagents 精选 sub-agent | v0.1 sub-agent 阶段 |
-| 0010 | 从 claude-skills / claude-code-plugins-plus-skills 精选 skill | v0.1 skill 阶段 |
-| 0011 | preset 系统设计 | v0.2 |
-| 0012 | env 前缀迁移策略（OPENCODE_* → CLAUDECODE_*） | v0.1 ingest |
-| 0013 | 是否保留 embedded Web UI | v0.1 ingest |
 | 0014 | plugin 自动 install 安全策略 | v0.1 plugin loader |
 
 ## 模板

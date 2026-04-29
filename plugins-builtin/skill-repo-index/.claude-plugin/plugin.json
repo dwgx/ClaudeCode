@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/anthropic-claude-plugin.json",
+  "name": "skill-repo-index",
+  "version": "0.0.1",
+  "description": "在 grep 前优先建立或查询轻量仓库路径索引。",
+  "author": {
+    "name": "dwgx",
+    "email": "dwgx1337@outlook.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/dwgx/ClaudeCode/tree/main/plugins-builtin/skill-repo-index",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dwgx/ClaudeCode.git",
+    "directory": "plugins-builtin/skill-repo-index"
+  },
+  "components": {
+    "skills": [
+      "./skills/repo-index/SKILL.md"
+    ]
+  }
+}

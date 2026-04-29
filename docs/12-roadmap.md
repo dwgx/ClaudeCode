@@ -13,9 +13,13 @@
 - [x] docs/01,03-09 由 catalog 综合填实
 - [x] ADR-0004 路由 / 0005 编排 / 0006 skill / 0007 TUI / 0008 兼容
 - [x] github.com/dwgx/ClaudeCode public live
-- [ ] 第二次 commit + push（含全部填实的 docs）
-- [ ] dispatch Codex ingest opencode → src/ + rebrand
-- [ ] src/ 编译跑通（`pnpm install` + `pnpm typecheck`）
+- [x] 第二次 commit + push（含全部填实的 docs）
+- [x] dispatch Codex ingest opencode → src/ + rebrand
+- [x] `bun install` smoke（1969 包装好；rebrand bug 已修；catalog 已加）
+- [x] ADR-0009 / 0010 / 0011 / 0012 / 0013 草案（待主脑 review 后转 Accepted）
+- [x] v0.1 路由层骨架（src/core/src/routing/，7 文件）
+- [x] v0.1 编排层骨架（src/core/src/orchestration/，18 文件）
+- [x] 前 3 个 builtin plugin（plugins-builtin/，13 文件）
 
 ## v0.1.0 — 可用最小核
 
