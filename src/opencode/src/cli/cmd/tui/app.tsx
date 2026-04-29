@@ -35,6 +35,9 @@ import { DialogMcp } from "@tui/component/dialog-mcp"
 import { DialogMcpAdd } from "@tui/component/dialog-mcp-add"
 import { DialogPermissions } from "@tui/component/dialog-permissions"
 import { DialogLogout } from "@tui/component/dialog-logout"
+import { DialogReleaseNotes } from "@tui/component/dialog-release-notes"
+import { DialogInit } from "@tui/component/dialog-init"
+import { DialogHooks } from "@tui/component/dialog-hooks"
 import { DialogStatus } from "@tui/component/dialog-status"
 import { DialogThemeList } from "@tui/component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
@@ -476,6 +479,29 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
     },
     {
+      title: "Initialize project",
+      value: "project.init",
+      category: "System",
+      slash: {
+        name: "init",
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogInit />)
+      },
+    },
+    {
+      title: "Release notes",
+      value: "release.notes",
+      category: "System",
+      slash: {
+        name: "release-notes",
+        aliases: ["release", "notes"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogReleaseNotes />)
+      },
+    },
+    {
       title: "New session",
       suggested: route.data.type === "session",
       value: "session.new",
@@ -577,6 +603,17 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
       onSelect: () => {
         dialog.replace(() => <DialogMcpAdd />)
+      },
+    },
+    {
+      title: "View hooks",
+      value: "hooks.list",
+      category: "Agent",
+      slash: {
+        name: "hooks",
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogHooks />)
       },
     },
     {
