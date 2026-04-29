@@ -54,6 +54,28 @@ export const AnthropicHooksPlugin: Plugin = async (input: PluginInput) => {
   const total = Object.values(all).reduce((acc, arr) => acc + (arr?.length ?? 0), 0)
   log.info("loaded", { events: Object.keys(all).filter((k) => all[k as AnthropicHookEventName]?.length), total })
 
+  // Bus events deliver only sessionID; remember parentID at session.created so
+  // session.idle / session.deleted can decide subagent vs primary later.
+  const sessionParents = new Map<string, string | null | undefined>()
+
+  function envelopeFor(
+    nativeName: string,
+    anthropicName: AnthropicHookEventName,
+    sessionID: string,
+    raw: unknown,
+  ): HookEnvelope {
+    return {
+      event_id: ulidish(),
+      runtime: "claudecode",
+      native_event_name: nativeName,
+      anthropic_event_name: anthropicName,
+      timestamp: new Date().toISOString(),
+      session_id: sessionID,
+      cwd: repoRoot,
+      raw,
+    }
+  }
+
   const hooks: Hooks = {}
 
   if (has("UserPromptSubmit")) {
@@ -122,6 +144,65 @@ export const AnthropicHooksPlugin: Plugin = async (input: PluginInput) => {
         raw: i,
       }
       await dispatch(all.PreCompact, undefined, envelope, true)
+    }
+  }
+
+  // Bus event subscription handles SessionStart / SessionEnd / Stop /
+  // SubagentStop / TaskCreated / TaskCompleted. The plugin loader subscribes
+  // bus.subscribeAll() and fans out via the `event` hook.
+  const wantsBus =
+    has("SessionStart") ||
+    has("SessionEnd") ||
+    has("Stop") ||
+    has("SubagentStop") ||
+    has("TaskCreated") ||
+    has("TaskCompleted")
+
+  if (wantsBus) {
+    hooks["event"] = async ({ event }) => {
+      const ev = event as { type?: string; properties?: any }
+      const type = ev?.type
+      const props = ev?.properties
+      if (!type || !props) return
+      const sessionID: string | undefined = props.sessionID
+      if (!sessionID) return
+
+      if (type === "session.created") {
+        const parentID = props.info?.parentID ?? null
+        sessionParents.set(sessionID, parentID ?? null)
+        if (has("SessionStart")) {
+          await dispatch(all.SessionStart, undefined, envelopeFor(type, "SessionStart", sessionID, props), false)
+        }
+        if (parentID && has("TaskCreated")) {
+          await dispatch(all.TaskCreated, undefined, envelopeFor(type, "TaskCreated", sessionID, props), false)
+        }
+        return
+      }
+
+      if (type === "session.idle") {
+        const parentID = sessionParents.get(sessionID)
+        const isSubagent = !!parentID
+        if (!isSubagent && has("Stop")) {
+          await dispatch(all.Stop, undefined, envelopeFor(type, "Stop", sessionID, props), false)
+        }
+        if (isSubagent) {
+          if (has("SubagentStop")) {
+            await dispatch(all.SubagentStop, undefined, envelopeFor(type, "SubagentStop", sessionID, props), false)
+          }
+          if (has("TaskCompleted")) {
+            await dispatch(all.TaskCompleted, undefined, envelopeFor(type, "TaskCompleted", sessionID, props), false)
+          }
+        }
+        return
+      }
+
+      if (type === "session.deleted") {
+        if (has("SessionEnd")) {
+          await dispatch(all.SessionEnd, undefined, envelopeFor(type, "SessionEnd", sessionID, props), false)
+        }
+        sessionParents.delete(sessionID)
+        return
+      }
     }
   }
 
