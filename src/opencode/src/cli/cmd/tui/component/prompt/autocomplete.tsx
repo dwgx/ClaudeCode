@@ -17,6 +17,7 @@ import { useTerminalDimensions } from "@opentui/solid"
 import { Locale } from "@/util/locale"
 import type { PromptInfo } from "./history"
 import { useFrecency } from "./frecency"
+import { rankMultiplier } from "@dwgx/claudecode-core/file-ranking/index"
 
 function removeLineRange(input: string) {
   const hashIndex = input.lastIndexOf("#")
@@ -304,15 +305,21 @@ export function Autocomplete(props: {
 
       // Add file options
       if (!result.error && result.data) {
-        const sortedFiles = result.data.sort((a, b) => {
-          const aScore = frecency.getFrecency(a)
-          const bScore = frecency.getFrecency(b)
-          if (aScore !== bScore) return bScore - aScore
-          const aDepth = a.split("/").length
-          const bDepth = b.split("/").length
-          if (aDepth !== bDepth) return aDepth - bDepth
-          return a.localeCompare(b)
-        })
+        const queryWantsTest = /\b(test|spec|fixture|mock)/i.test(baseQuery)
+        const scored = result.data.map((p) => ({
+          path: p,
+          mult: rankMultiplier({ path: p, query: baseQuery ?? "", frecency: frecency.getFrecency(p), queryWantsTest })
+            .multiplier,
+        }))
+        const sortedFiles = scored
+          .sort((a, b) => {
+            if (a.mult !== b.mult) return b.mult - a.mult
+            const aDepth = a.path.split("/").length
+            const bDepth = b.path.split("/").length
+            if (aDepth !== bDepth) return aDepth - bDepth
+            return a.path.localeCompare(b.path)
+          })
+          .map((x) => x.path)
 
         const width = props.anchor().width - 4
         options.push(
@@ -445,6 +452,7 @@ export function Autocomplete(props: {
       return prev
     }
 
+    const queryWantsTest = /\b(test|spec|fixture|mock)/i.test(searchValue)
     const result = fuzzysort.go(removeLineRange(searchValue), mixed, {
       keys: [
         (obj) => removeLineRange((obj.value ?? obj.display).trimEnd()),
@@ -458,8 +466,17 @@ export function Autocomplete(props: {
         if (displayResult && displayResult.target.startsWith(store.visible + searchValue)) {
           score *= 2
         }
-        const frecencyScore = objResults.obj.path ? frecency.getFrecency(objResults.obj.path) : 0
-        return score * (1 + frecencyScore)
+        if (objResults.obj.path) {
+          const fre = frecency.getFrecency(objResults.obj.path)
+          const { multiplier } = rankMultiplier({
+            path: objResults.obj.path,
+            query: searchValue,
+            frecency: fre,
+            queryWantsTest,
+          })
+          score *= multiplier
+        }
+        return score
       },
     })
 

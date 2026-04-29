@@ -4,6 +4,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/solid"
 import { fileURLToPath } from "url"
 import { DialogSelect, type DialogSelectOption } from "@tui/ui/dialog-select"
 import { Show, createEffect, createMemo, createSignal } from "solid-js"
+import { evaluateTrust, trustAllOverride } from "@dwgx/claudecode-core/plugin-trust/index"
 
 const id = "internal:plugin-manager"
 const key = Keybind.parse("space").at(0)
@@ -35,6 +36,41 @@ function meta(item: TuiPluginStatus, width: number) {
   const next = source(item.spec)
   if (next) return next
   return item.spec
+}
+
+async function doInstall(api: TuiPluginApi, mod: string, global: boolean): Promise<void> {
+  const out = await api.plugins.install(mod, { global })
+  if (!out.ok) {
+    api.ui.toast({ variant: "error", message: out.message })
+    if (out.missing) {
+      api.ui.toast({
+        variant: "info",
+        message: "Check npm registry/auth settings and try again.",
+      })
+    }
+    show(api)
+    return
+  }
+  api.ui.toast({
+    variant: "success",
+    message: `Installed ${mod} (${global ? "global" : "local"}: ${out.dir})`,
+  })
+  if (!out.tui) {
+    api.ui.toast({ variant: "info", message: "Package has no TUI target to load in this app." })
+    show(api)
+    return
+  }
+  const ok = await api.plugins.add(mod)
+  if (!ok) {
+    api.ui.toast({
+      variant: "warning",
+      message: "Installed plugin, but runtime load failed. See console/logs; restart TUI to retry.",
+    })
+    show(api)
+    return
+  }
+  api.ui.toast({ variant: "success", message: `Loaded ${mod} in current session.` })
+  show(api)
 }
 
 function Install(props: { api: TuiPluginApi }) {
@@ -77,58 +113,31 @@ function Install(props: { api: TuiPluginApi }) {
           return
         }
 
-        setBusy(true)
-        void props.api.plugins
-          .install(mod, { global: global() })
-          .then((out) => {
-            if (!out.ok) {
-              props.api.ui.toast({
-                variant: "error",
-                message: out.message,
-              })
-              if (out.missing) {
-                props.api.ui.toast({
-                  variant: "info",
-                  message: "Check npm registry/auth settings and try again.",
-                })
+        const verdict = evaluateTrust(mod)
+        const proceed = () => {
+          setBusy(true)
+          void doInstall(props.api, mod, global()).finally(() => setBusy(false))
+        }
+
+        if (!verdict.trusted && !trustAllOverride()) {
+          props.api.ui.dialog.replace(() => (
+            <props.api.ui.DialogConfirm
+              title="Untrusted plugin"
+              message={
+                `${mod}\n\n` +
+                `${verdict.reason}.\n\n` +
+                `Plugins run as code in this process and have full filesystem and network access. ` +
+                `Only proceed if you trust the maintainer of this package.\n\n` +
+                `(Set CLAUDECODE_PLUGIN_TRUST_ALL=1 to skip this prompt in CI.)`
               }
-              show(props.api)
-              return
-            }
+              onConfirm={proceed}
+              onCancel={() => show(props.api)}
+            />
+          ))
+          return
+        }
 
-            props.api.ui.toast({
-              variant: "success",
-              message: `Installed ${mod} (${global() ? "global" : "local"}: ${out.dir})`,
-            })
-            if (!out.tui) {
-              props.api.ui.toast({
-                variant: "info",
-                message: "Package has no TUI target to load in this app.",
-              })
-              show(props.api)
-              return
-            }
-
-            return props.api.plugins.add(mod).then((ok) => {
-              if (!ok) {
-                props.api.ui.toast({
-                  variant: "warning",
-                  message: "Installed plugin, but runtime load failed. See console/logs; restart TUI to retry.",
-                })
-                show(props.api)
-                return
-              }
-
-              props.api.ui.toast({
-                variant: "success",
-                message: `Loaded ${mod} in current session.`,
-              })
-              show(props.api)
-            })
-          })
-          .finally(() => {
-            setBusy(false)
-          })
+        proceed()
       }}
       onCancel={() => {
         show(props.api)
@@ -247,6 +256,7 @@ const tui: TuiPlugin = async (api) => {
       value: "plugins.list",
       keybind: "plugin_manager",
       category: "System",
+      slash: { name: "plugins", aliases: ["plugin"] },
       onSelect() {
         show(api)
       },
@@ -255,6 +265,7 @@ const tui: TuiPlugin = async (api) => {
       title: "Install plugin",
       value: "plugins.install",
       category: "System",
+      slash: { name: "plugin-install" },
       onSelect() {
         showInstall(api)
       },

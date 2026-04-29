@@ -32,6 +32,7 @@ import { LocalProvider, useLocal } from "@tui/context/local"
 import { DialogModel } from "@tui/component/dialog-model"
 import { useConnected } from "@tui/component/use-connected"
 import { DialogMcp } from "@tui/component/dialog-mcp"
+import { DialogMcpAdd } from "@tui/component/dialog-mcp-add"
 import { DialogStatus } from "@tui/component/dialog-status"
 import { DialogThemeList } from "@tui/component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
@@ -40,6 +41,8 @@ import { DialogAgent } from "@tui/component/dialog-agent"
 import { DialogSessionList } from "@tui/component/dialog-session-list"
 import { DialogPs } from "@tui/component/dialog-ps"
 import { DialogOutputStyle } from "@tui/component/dialog-output-style"
+import { DialogCost } from "@tui/component/dialog-cost"
+import { DialogDoctor } from "@tui/component/dialog-doctor"
 import { DialogConsoleOrg } from "@tui/component/dialog-console-org"
 import { KeybindProvider, useKeybind } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
@@ -447,6 +450,30 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
     },
     {
+      title: "Cost & tokens",
+      value: "session.cost",
+      category: "Session",
+      slash: {
+        name: "cost",
+        aliases: ["usage"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogCost />)
+      },
+    },
+    {
+      title: "Doctor (system check)",
+      value: "system.doctor",
+      category: "System",
+      slash: {
+        name: "doctor",
+        aliases: ["health"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogDoctor />)
+      },
+    },
+    {
       title: "New session",
       suggested: route.data.type === "session",
       value: "session.new",
@@ -537,6 +564,17 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
       onSelect: () => {
         dialog.replace(() => <DialogMcp />)
+      },
+    },
+    {
+      title: "Add MCP server",
+      value: "mcp.add",
+      category: "Agent",
+      slash: {
+        name: "mcp-add",
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogMcpAdd />)
       },
     },
     {
